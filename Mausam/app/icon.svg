@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mausam">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b6ea8"/>
+      <stop offset="1" stop-color="#0b3d66"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <!-- sun -->
+  <circle cx="196" cy="188" r="58" fill="#ffd166"/>
+  <g stroke="#ffd166" stroke-width="14" stroke-linecap="round">
+    <path d="M196 92v-22"/><path d="M196 306v22"/>
+    <path d="M100 188H78"/><path d="M314 188h-22"/>
+    <path d="M128 120l-16-16"/><path d="M280 272l16 16"/>
+    <path d="M264 120l16-16"/><path d="M112 272l-16 16"/>
+  </g>
+  <!-- cloud -->
+  <path d="M180 340a62 62 0 0 1 6-123 78 78 0 0 1 148 26 52 52 0 0 1-14 97z"
+        fill="#ffffff" opacity=".95"/>
+</svg>

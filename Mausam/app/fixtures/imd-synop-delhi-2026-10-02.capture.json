@@ -1,0 +1,19 @@
+{
+  "what": "IMD SYNOP surface observations near Delhi (real capture)",
+  "endpoint": "https://reactjs.imd.gov.in/geoserver/wfs",
+  "request": {
+    "service": "WFS",
+    "version": "1.1.0",
+    "request": "GetFeature",
+    "typename": "imd:synop_data_layer",
+    "outputFormat": "application/json",
+    "BBOX": "76.6,28.1,77.8,29.0",
+    "maxFeatures": "5"
+  },
+  "captured_at_utc": "2026-10-02T20:46:00Z",
+  "http_status": 200,
+  "bytes": 2553,
+  "sha256": "bb3dbf6b09bb7582162243c49a64fed65a7c11bb88ad877b6daadf86863e58d2",
+  "note": "Public IMD GeoServer (keyless). Keyed api.imd.gov.in requires static-IP whitelisting; this is the fallback path.",
+  "data_timeStamp": "2026-10-02T20:22:00Z"
+}

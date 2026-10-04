@@ -1,0 +1,9 @@
+{
+  "what": "Daylight bounds for the planner (computed approximation, NOT an IMD product)",
+  "date": "2026-10-03",
+  "place": "New Delhi (28.6139, 77.209)",
+  "sunriseIST": "06:15",
+  "sunsetIST": "18:06",
+  "method": "NOAA solar algorithm (approximate, \u00b110 min), labelled computed solar times in the UI",
+  "note": "IMD sun/moon endpoint (#15) is keyed; unreachable without the static-IP host (ticket 13)."
+}

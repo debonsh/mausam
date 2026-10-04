@@ -1,0 +1,16 @@
+{
+  "what": "CPCB AQI fetch attempts from the build host (no value captured)",
+  "attempts": [
+    {
+      "url": "https://api.data.gov.in/resource/real-time-air-quality-index-various-locations",
+      "result": "connection refused (ECONNREFUSED) from this host",
+      "at_utc": "2026-10-03"
+    },
+    {
+      "url": "https://airquality.xkdr.org/api/stations (+2 variants)",
+      "result": "HTTP 404 / DNS unknown \u2014 no documented keyless JSON path found from here",
+      "at_utc": "2026-10-03"
+    }
+  ],
+  "consequence": "AQI renders as the adapter-unavailable gap (ticket 05). CPCB key + host validation is ticket 20 (finale). app.cpcbccr.com was not attempted (banned, ADR-0002)."
+}

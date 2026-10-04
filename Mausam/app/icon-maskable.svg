@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mausam">
+  <!-- Maskable: full-bleed background, artwork kept inside the safe zone (centre 80%). -->
+  <rect width="512" height="512" fill="#0b3d66"/>
+  <circle cx="196" cy="196" r="50" fill="#ffd166"/>
+  <g stroke="#ffd166" stroke-width="12" stroke-linecap="round">
+    <path d="M196 116v-18"/><path d="M196 294v18"/>
+    <path d="M116 196H98"/><path d="M294 196h-18"/>
+    <path d="M140 140l-13-13"/><path d="M252 252l13 13"/>
+    <path d="M252 140l13-13"/><path d="M140 252l-13 13"/>
+  </g>
+  <path d="M186 340a54 54 0 0 1 5-107 68 68 0 0 1 129 23 45 45 0 0 1-12 84z"
+        fill="#ffffff"/>
+</svg>

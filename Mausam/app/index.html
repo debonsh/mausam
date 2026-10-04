@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Mausam</title>
+  <meta name="description" content="The Mausam home screen: tells you what to do, and proves where every number came from." />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Installable mobile app (standalone, no browser chrome) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Mausam" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <!-- Pin the theme before first paint so dark never flashes light. -->
+  <script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search).get("theme");
+        var dark = p === "dark" || (p !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" />
+
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <p class="pane" style="color:var(--label-3)">Loading IMD data…</p>
+  </div>
+
+  <script src="engine/deriveCard.js"></script>
+  <script src="engine/windows.js"></script>
+  <script src="i18n.js"></script>
+  <script src="personal.js"></script>
+  <script src="icons.js"></script>
+  <script src="core.js"></script>
+  <script src="views/onboarding.js"></script>
+  <script src="views/home.js"></script>
+  <script src="views/provenance.js"></script>
+  <script src="views/settings.js"></script>
+  <script src="views/planner.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

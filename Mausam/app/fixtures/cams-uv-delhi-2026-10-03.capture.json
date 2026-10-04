@@ -1,0 +1,17 @@
+{
+  "what": "Hourly UV index forecast near Delhi (real capture, labelled adapter)",
+  "endpoint": "https://air-quality-api.open-meteo.com/v1/air-quality",
+  "request": {
+    "latitude": 28.61,
+    "longitude": 77.2,
+    "hourly": "uv_index",
+    "timezone": "Asia/Kolkata",
+    "start_date": "2026-10-03",
+    "end_date": "2026-10-04"
+  },
+  "source_chain": "Copernicus CAMS model served via Open-Meteo (keyless). Labelled Non-IMD in the UI; never IMD. AQI from this feed is NOT used (CPCB-or-XKDR rule, ADR-0002).",
+  "captured_at_utc": "2026-10-03T09:01:32Z",
+  "http_status": 200,
+  "bytes": 1422,
+  "sha256": "96d8285d11f51bcf959b2692e70dba7dfa6328132375760530909020436adc24"
+}

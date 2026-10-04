@@ -1,0 +1,124 @@
+/* Mausam design tokens — the Stitch visual direction (v2, 03 Oct 2026).
+   Light: slate surfaces, authority blue #0b3d66, one accent doing the work.
+   Dark: true-black canvas, iOS surfaces #1c1c1e, azure #4aa3ff.
+   JS pins data-theme="light|dark" on <html> (system default, ?theme= override),
+   so every component reads tokens and never a literal colour. */
+
+:root {
+  color-scheme: light;
+
+  /* — surfaces — */
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --sheet: #ffffff;
+
+  /* — text — */
+  --label: #0f172a;
+  --label-2: #475569;
+  --label-3: #64748b;
+  --label-4: #94a3b8;
+
+  /* — lines — */
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+
+  /* — accent (authority blue) — */
+  --accent: #0b3d66;
+  --accent-strong: #082c4a;
+  --accent-ink: #ffffff;
+  --accent-soft: #f0f5fa;
+  --accent-soft-2: #e8f1f8;
+  --accent-line: #dce6f0;
+
+  /* — state — */
+  --ok: #059669;
+  --ok-soft: #ecfdf5;
+  --ok-line: #a7f3d0;
+  --sev-high: #dc2626;
+  --sev-high-soft: #fef2f2;
+  --sev-high-line: #fecaca;
+  --sev-medium: var(--accent);
+  --sev-ok: var(--ok);
+
+  /* — map — */
+  --map-bg: #e6eff8;
+  --map-road: #d5e3f2;
+  --map-road-2: #cbdcf0;
+  --map-boundary: rgba(11, 61, 102, .35);
+  --map-wash: rgba(11, 61, 102, .10);
+  --map-ring: rgba(11, 61, 102, .25);
+  --map-pin: #0b3d66;
+
+  /* — depth — */
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, .04);
+  --shadow-sheet: 0 -8px 24px rgba(15, 23, 42, .06);
+  --shadow-overlay: 0 -12px 40px rgba(11, 61, 102, .18);
+  --scrim: rgba(8, 32, 53, .45);
+
+  /* — radii — */
+  --r-sheet: 28px;
+  --r-card: 16px;
+  --r-tile: 12px;
+  --r-ctl: 12px;
+  --r-pill: 999px;
+
+  /* — space — */
+  --sp-1: 4px; --sp-2: 8px; --sp-25: 10px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+
+  /* — type — */
+  --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* — motion — */
+  --t-fast: 150ms;
+  --t-base: 300ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #121214;
+  --surface-3: #2c2c2e;
+  --sheet: #121214;
+
+  --label: #f2f2f7;
+  --label-2: #a1a1a6;
+  --label-3: #8e8e93;
+  --label-4: #636366;
+
+  --line: #2c2c2e;
+  --line-soft: #1c1c1e;
+
+  --accent: #4aa3ff;
+  --accent-strong: #78bcff;
+  --accent-ink: #08121a;
+  --accent-soft: rgba(74, 163, 255, .12);
+  --accent-soft-2: rgba(74, 163, 255, .16);
+  --accent-line: rgba(74, 163, 255, .28);
+
+  --ok: #34c759;
+  --ok-soft: rgba(52, 199, 89, .12);
+  --ok-line: rgba(52, 199, 89, .30);
+  --sev-high: #ff453a;
+  --sev-high-soft: rgba(255, 69, 58, .12);
+  --sev-high-line: rgba(255, 69, 58, .30);
+
+  --map-bg: #0b111a;
+  --map-road: #1c2d42;
+  --map-road-2: #19283c;
+  --map-boundary: rgba(74, 163, 255, .55);
+  --map-wash: rgba(74, 163, 255, .06);
+  --map-ring: rgba(74, 163, 255, .22);
+  --map-pin: #4aa3ff;
+
+  --shadow-card: none;
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, .5);
+  --shadow-overlay: 0 -12px 40px rgba(0, 0, 0, .6);
+  --scrim: rgba(0, 0, 0, .6);
+}

@@ -1,0 +1,9 @@
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+# agent tool config — contains machine-local secrets, never committed.
+/.commandcode/
+# python bytecode / build scraps
+__pycache__/
+build_tmp/
+# npm deps — regenerable from package-lock.json
+node_modules/
