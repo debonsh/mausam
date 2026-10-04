@@ -17,6 +17,7 @@ const Home = window.MausamHome;
 const Provenance = window.MausamProvenance;
 const Settings = window.MausamSettings;
 const Planner = window.MausamPlanner;
+const ChatView = window.MausamChatView;
 
 const FIXTURES = {
   home: ["fixtures/imd-synop-delhi-2026-10-02.json", "fixtures/imd-synop-delhi-2026-10-02.capture.json"],
@@ -140,6 +141,11 @@ const api = {
     if (sheet) sheet.dataset.snap = snap;
   },
 
+  setTheme(mode) {
+    theme.setMode(mode);
+    render();
+  },
+
   setActivity(a) {
     if (!knownActivity(a)) return;
     state.activity = a;
@@ -190,7 +196,7 @@ const api = {
       return bytes >= 0
         ? `Re-derived ${bytes} bytes, byte-identical.`
         : "Replay mismatch, please report this.";
-    } });
+    }, ask: () => ChatView.open(state, api, item), askLabel: tr("chat.ask") });
   },
 
   openWindowProvenance(blockId) {
@@ -274,6 +280,7 @@ function render() {
     app.innerHTML = Home.html(state, api) + tabbarHTML();
     Home.wire(state, api);
   }
+  ChatView.mountFab(state, api);
   updateFreshness();
 }
 

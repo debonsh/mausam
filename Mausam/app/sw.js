@@ -1,7 +1,7 @@
 // Ticket 11 origin: the shell must render with the network disabled.
 // Cache-first for same-origin GET (first render never waits on 2G), with a
 // background refresh so a deploy is picked up on the next load.
-const CACHE = "mausam-home-v7";
+const CACHE = "mausam-home-v8";
 const ASSETS = [
   "./",
   "index.html",
@@ -17,8 +17,10 @@ const ASSETS = [
   "views/provenance.js",
   "views/settings.js",
   "views/planner.js",
+  "views/chat.js",
   "engine/deriveCard.js",
   "engine/windows.js",
+  "engine/chat.js",
   "manifest.webmanifest",
   "icon.svg",
   "icon-maskable.svg",

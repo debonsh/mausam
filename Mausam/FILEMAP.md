@@ -52,11 +52,13 @@ Mausam/
 │   │   ├── home.js               # map hero + decision stack + persona chips + gaps (tickets 03–06)
 │   │   ├── provenance.js         # provenance sheet + replay + citation (ticket 04)
 │   │   ├── settings.js           # settings · places · map tab · inbox (tickets 15/19)
-│   │   └── planner.js            # windows + routines + week strip (tickets 16/19)
+│   │   ├── planner.js            # windows + routines + week strip (tickets 16/19)
+│   │   └── chat.js               # Mausam AI sheet + home FAB + provenance ask (ticket 21, PRD v1.2)
 │   │
 │   ├── engine/                   # deterministic rules → view model (Node-testable)
 │   │   ├── deriveCard.js         # rule chain: facts → severity → action + detail line
-│   │   └── windows.js            # gates + versioned comfort score → window view model (ticket 17)
+│   │   ├── windows.js            # gates + versioned comfort score → window view model (ticket 17)
+│   │   └── chat.js               # grounded matcher: bundle quotes only, never generates (ticket 21)
 │   │
 │   ├── fixtures/                 # committed real IMD captures
 │   │   ├── imd-synop-delhi-2026-10-02.json
@@ -106,6 +108,7 @@ Mausam/
 ├── tests/                        # Node + pytest; mirrors module layout
 │   ├── engine.test.js            # replay byte-identity, rule boundaries
 │   ├── windows.test.js           # window gates/weights + determinism (ticket 17)
+│   ├── chat.test.js              # grounded replies: quotes ctx, never invents (ticket 21)
 │   ├── onboarding.test.js        # ≤3 steps, skippable, defaults
 │   └── test_backend.py           # gateway/fusion/engine
 │

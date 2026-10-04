@@ -27,22 +27,47 @@ const store = {
   },
 };
 
-// Theme: system default, ?theme=light|dark pins it for demos and screenshots.
-// The inline script in index.html sets data-theme before first paint; this
-// keeps it in sync when the system flips and fixes the theme-color meta.
+// Theme: stored preference (light|dark|system), ?theme=light|dark pins it for
+// demos and screenshots and wins over everything. The inline script in
+// index.html sets data-theme before first paint; this keeps it in sync when
+// the system flips and fixes the theme-color meta.
+const MODES = ["light", "dark", "system"];
 const theme = {
-  pinned: (() => {
+  // ?theme=light|dark pins the demo/screenshot and wins until the user
+  // picks a mode in Settings, which drops the param (explicit choice wins).
+  pinned() {
     if (typeof location === "undefined") return null;
     const t = new URLSearchParams(location.search).get("theme");
     return t === "light" || t === "dark" ? t : null;
-  })(),
+  },
+  mode: "system",
   current: "light",
+  resolve(mode) {
+    const pinned = this.pinned();
+    if (pinned) return pinned;
+    const m = mode || this.mode;
+    if (m === "light" || m === "dark") return m;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  },
   init() {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    this.apply(this.pinned || (mq.matches ? "dark" : "light"));
-    mq.addEventListener("change", (e) => {
-      if (!this.pinned) this.apply(e.matches ? "dark" : "light");
+    this.mode = MODES.includes(store.get("theme-mode", "system")) ? store.get("theme-mode", "system") : "system";
+    this.apply(this.resolve());
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      if (!this.pinned() && this.mode === "system") this.apply(e.matches ? "dark" : "light");
     });
+  },
+  setMode(mode) {
+    if (!MODES.includes(mode)) return;
+    this.mode = mode;
+    store.set("theme-mode", mode);
+    try {
+      const url = new URL(location.href);
+      if (url.searchParams.has("theme")) {
+        url.searchParams.delete("theme");
+        history.replaceState(null, "", url);
+      }
+    } catch {}
+    this.apply(this.resolve());
   },
   apply(name) {
     this.current = name === "dark" ? "dark" : "light";

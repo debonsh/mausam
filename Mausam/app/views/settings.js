@@ -4,7 +4,7 @@
 // views/settings.js — Settings, Places, Map and Inbox. Honest about what
 // needs the finale host: sync (ticket 14) and the WFS warning overlay (13).
 
-const { esc, store, $, $$, latLabel } = window.MausamCore;
+const { esc, store, theme, $, $$, latLabel } = window.MausamCore;
 const { icon } = window.MausamIcons;
 const { t } = window.MausamI18n;
 const { ageLabel } = window.MausamEngine;
@@ -80,6 +80,15 @@ function settingsHTML(state, api) {
               <option value="hi"${state.lang === "hi" ? " selected" : ""}>हिंदी</option>
             </select>
           </div>
+          <div class="row">
+            <span class="row__left"><span class="row__icon">${icon("sun", 17)}</span>
+              <span><span class="row__label">${esc(T("settings.theme"))}</span>
+              <span class="row__sub">${esc(T("settings.themeSub"))}</span></span></span>
+            <span class="seg" role="group" aria-label="${esc(T("settings.theme"))}">
+              ${["light", "system", "dark"].map((m) =>
+                `<button type="button" data-theme-mode="${m}" aria-pressed="${theme.mode === m}">${icon(m === "light" ? "sun" : m === "dark" ? "moon" : "gear", 13)}${esc(T("theme." + m))}</button>`).join("")}
+            </span>
+          </div>
           <button class="row" type="button" data-edit-personas>
             <span class="row__left"><span class="row__icon">${icon("users", 17)}</span><span class="row__label">${esc(T("settings.personas"))}</span></span>
             <span class="row__value row__value--accent">${esc(personaValue(state))} ${icon("chevronRight", 15)}</span>
@@ -151,6 +160,7 @@ function wireSettings(state, api) {
   if (lang) lang.addEventListener("change", () => api.setLang(lang.value));
   const prov = $("#settings-prov");
   if (prov) prov.addEventListener("change", () => api.setProvenance(prov.checked));
+  $$("[data-theme-mode]").forEach((b) => b.addEventListener("click", () => api.setTheme(b.dataset.themeMode)));
   $$("[data-fb]").forEach((b) => b.addEventListener("click", () => api.recordFeedback(b.dataset.fb)));
   const edit = $("[data-edit-personas]");
   if (edit) edit.addEventListener("click", () => api.editPersonas());

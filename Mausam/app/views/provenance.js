@@ -10,7 +10,7 @@ const { icon } = window.MausamIcons;
 const { t } = window.MausamI18n;
 const { ageLabel, istTime } = window.MausamEngine;
 
-function open({ item, raw, replay, lang, title }) {
+function open({ item, raw, replay, lang, title, ask, askLabel }) {
   close();
   const p = item.prov || {};
   const age = ageLabel(p.issuedUtc, p.capturedAt);
@@ -86,6 +86,7 @@ function open({ item, raw, replay, lang, title }) {
       <div class="modal__foot">
         <button class="btn btn--block" type="button" id="replay-btn">${icon("play", 16)}${esc(T("replay"))}</button>
         <button class="btn btn--ghost btn--block" type="button" id="copy-cite">${icon("clipboard", 15)}${esc(T("prov.copy"))}</button>
+        ${ask ? `<button class="btn btn--ghost btn--block" type="button" id="ask-bot">${icon("chat", 15)}${esc(askLabel || T("chat.ask"))}</button>` : ""}
         <p class="caption" id="prov-out" aria-live="polite" style="text-align:center"></p>
         <div class="modal__homebar"></div>
       </div>
@@ -95,6 +96,7 @@ function open({ item, raw, replay, lang, title }) {
 
   const out = $("#prov-out");
   $("#prov-close").addEventListener("click", close);
+  if (ask) $("#ask-bot").addEventListener("click", () => { close(); ask(); });
   wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
   document.addEventListener("keydown", escClose);
   $("#replay-btn").addEventListener("click", () => {

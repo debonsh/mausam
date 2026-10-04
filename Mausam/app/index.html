@@ -23,7 +23,10 @@
     (function () {
       try {
         var p = new URLSearchParams(location.search).get("theme");
-        var dark = p === "dark" || (p !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem("mausam:theme-mode")); } catch (e) {}
+        var dark = p === "dark" || (p !== "light" &&
+          (saved === "dark" || (saved !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)));
         document.documentElement.dataset.theme = dark ? "dark" : "light";
       } catch (e) {}
     })();
@@ -44,6 +47,7 @@
 
   <script src="engine/deriveCard.js"></script>
   <script src="engine/windows.js"></script>
+  <script src="engine/chat.js"></script>
   <script src="i18n.js"></script>
   <script src="personal.js"></script>
   <script src="icons.js"></script>
@@ -53,6 +57,7 @@
   <script src="views/provenance.js"></script>
   <script src="views/settings.js"></script>
   <script src="views/planner.js"></script>
+  <script src="views/chat.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

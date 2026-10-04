@@ -4,13 +4,13 @@
 Reads:  mausam PPT/SIH2026-IDEA-Presentation-Format.pptx  (official, untouched)
 Writes: mausam PPT/SIH26076-Mausam-FINAL.pptx            (6 slides, instruction slide dropped)
 
-Rules honoured:
-- 6-slide structure kept; every required pointer keeps its exact wording.
-- Everything added is a native editable object (p:sp text boxes / shapes,
-  p:pic pictures, rightArrow connectors). No flattened slides, no rasterized
-  text. Screenshots are embedded as movable/resizable p:pic objects.
-- Slide size, masters, footers, logos untouched.
-- No invented statistics anywhere.
+Design language mirrors the team's Canva reference deck (pills, chips, black-
+bordered pastel panels, yellow caption chips, red/blue word emphasis) while
+staying inside the official SIH template: masters, footers, SIH logo, six
+slides, and every required pointer word-for-word.
+
+Everything added is a native editable object (p:sp / p:pic / rightArrow).
+No flattened slides, no rasterized text, no invented statistics.
 """
 import re
 import shutil
@@ -23,34 +23,50 @@ from xml.sax.saxutils import escape
 HERE = Path(__file__).resolve().parent
 TPL = HERE / "SIH2026-IDEA-Presentation-Format.pptx"
 OUT = HERE / "SIH26076-Mausam-FINAL.pptx"
-EV = Path(__file__).resolve().parent.parent / "Mausam" / "docs" / "evidence"
+EV = HERE.parent / "Mausam" / "docs" / "evidence"
 
-# Fill before upload (SIH portal values).
 TEAM_ID = "195697"
 TEAM_NAME = "Zencoderss"
+DEMO = ("https://mausam-sih26076-devanshdhangar70-7520s-projects"
+        ".vercel.app/")
+DEMO_QR = HERE / "demo-qr.png"
 
 EMU = 914400
-NAVY = "003366"     # Mausam/IMD authority blue (our label, not a brand claim)
-BLUE = "4F81BD"     # template accent1
-LIGHT = "EAF1F8"    # card fill
-PALE = "F2F2F2"
+NAVY = "003366"        # authority navy (pills, chips)
+BLUE = "4F81BD"        # template accent1
+PANEL = "D9EAFB"       # light-blue panel (reference deck)
+PINK = "FBE1EE"        # pink panel (reference deck)
+PINKCHIP = "E5399A"
+GREEN = "2E9E4F"       # reference green pill
+GREENBR = "5AAA46"
+YELLOW = "F6E43B"      # highlight caption chip
 AMBER = "F79646"
-GREEN = "9BBB59"
-RED = "C0504D"
+ORANGE = "F26522"
+ORANGE2 = "D9480F"     # deep orange panel (white text passes contrast)
+RED = "D92B2B"         # red lead-in emphasis
+BLUEKEY = "1A44E8"     # blue key-phrase emphasis
+LIGHT = "EAF1F8"
+PALE = "F2F2F2"
 INK = "1A1A1A"
 WHITE = "FFFFFF"
 GREY = "595959"
+BLACK = "000000"
+
+PILLFONT = "Arial Black"
+BODYFONT = "Arial"
+SW = 13.333            # slide width, inches
 
 
 def E(v):
     return int(round(v * EMU))
 
 
-def run(t, sz=12, b=False, color=INK, font="Arial"):
+def run(t, sz=12, b=False, color=INK, font=BODYFONT, u=None):
     bb = ' b="1"' if b else ""
+    uu = f' u="{u}"' if u else ""
     # ECMA-376 order: solidFill BEFORE latin/ea/cs, else renderers drop it.
     return (
-        f'<a:r><a:rPr lang="en-US" sz="{sz * 100}"{bb} dirty="0">'
+        f'<a:r><a:rPr lang="en-US" sz="{int(sz * 100)}"{bb}{uu} dirty="0">'
         f'<a:solidFill><a:srgbClr val="{color}"/></a:solidFill>'
         f'<a:latin typeface="{font}"/><a:ea typeface="{font}"/>'
         f'<a:cs typeface="{font}"/></a:rPr>'
@@ -58,19 +74,21 @@ def run(t, sz=12, b=False, color=INK, font="Arial"):
     )
 
 
-def para(runs, algn="l", marL=0):
+def para(runs, algn="l", spc_aft=None):
     rs = "".join(runs)
+    aft = (f'<a:spcAft><a:spcPts val="{int(spc_aft * 100)}"/></a:spcAft>'
+           if spc_aft else "")
     return (
-        f'<a:p><a:pPr algn="{algn}" marL="{marL}">'
-        '<a:lnSpc><a:spcPct val="100000"/></a:lnSpc></a:pPr>' + rs + "</a:p>"
+        f'<a:p><a:pPr algn="{algn}">'
+        '<a:lnSpc><a:spcPct val="100000"/></a:lnSpc>' + aft +
+        "</a:pPr>" + rs + "</a:p>"
     )
 
 
 def shape(sid, name, geom, x, y, w, h, paras, fill=None, line=None,
-          anchor="t", wrap="square", adj=None):
-    """One native editable p:sp. paras = list of <a:p> strings."""
+          anchor="t", wrap="square", adj=None, lw=12700):
     fxml = f'<a:solidFill><a:srgbClr val="{fill}"/></a:solidFill>' if fill else "<a:noFill/>"
-    lxml = (f'<a:ln w="12700"><a:solidFill><a:srgbClr val="{line}"/>'
+    lxml = (f'<a:ln w="{lw}"><a:solidFill><a:srgbClr val="{line}"/>'
             "</a:solidFill></a:ln>" if line else '<a:ln><a:noFill/></a:ln>')
     adjx = f"<a:avLst>{adj}</a:avLst>" if adj else "<a:avLst/>"
     tx = "".join(paras)
@@ -86,18 +104,7 @@ def shape(sid, name, geom, x, y, w, h, paras, fill=None, line=None,
     )
 
 
-def label(sid, x, y, w, h, text, sz=10, b=True, color=NAVY, algn="l"):
-    return shape(sid, "lbl", "rect", x, y, w, h,
-                 [para([run(text, sz, b, color)], algn=algn)], fill=None)
-
-
-def card(sid, x, y, w, h, title, lines, tsz=12, lsz=10, fill=WHITE,
-         border="4F81BD", title_color=INK):
-    ps = [para([run(title, tsz, True, title_color)])]
-    for ln in lines:
-        ps.append(para([run(ln, lsz, False, GREY if ln.startswith("(") else INK)]))
-    return shape(sid, "card", "roundRect", x, y, w, h, ps,
-                 fill=fill, line=border, anchor="t")
+STADIUM = '<a:gd name="adj" fmla="val 50000"/>'
 
 
 def arrow(sid, x, y, w, h, fill=BLUE):
@@ -114,12 +121,7 @@ EMPTY_PARA = ('<a:p><a:pPr><a:lnSpc><a:spcPct val="100000"/></a:lnSpc>'
 
 
 def empty_shape(xml, name):
-    """Blank the text of a shape (by cNvPr name) and collapse its frame.
-
-    Used for the inherited pointer boxes whose zone the visuals take over.
-    The exact pointer wording is re-emitted verbatim in compact labels, and
-    the husk is parked invisible so it cannot overlap anything.
-    """
+    """Blank a shape's text and park its frame as a 100x100 EMU husk."""
     pat = re.compile(
         r'(<p:(?:sp|graphicFrame)\b(?:(?!</p:(?:sp|graphicFrame)>).)*?'
         r'<p:cNvPr id="\d+" name="' + re.escape(name) + r'".*?'
@@ -142,7 +144,6 @@ def empty_shape(xml, name):
 
 
 def remove_shape(xml, name):
-    """Delete a whole p:sp / p:pic element by cNvPr name (template art)."""
     pat = re.compile(
         r'<p:(?:sp|pic)\b(?:(?!</p:(?:sp|pic)>).)*?'
         r'<p:cNvPr id="\d+" name="' + re.escape(name) + r'".*?'
@@ -152,45 +153,16 @@ def remove_shape(xml, name):
     return xml[:m.start()] + xml[m.end():]
 
 
-def move_shape(xml, name, x=None, y=None):
-    """Move a template shape's frame (keeps its text/styles untouched)."""
-    pat = re.compile(
-        r'(<p:cNvPr id="\d+" name="' + re.escape(name) + r'".*?'
-        r'<a:off x=")\d+(" y=")\d+(")', re.S)
-    m = pat.search(xml)
-    assert m, f"xfrm not found for move: {name}"
-    full = m.group(0)
-    if x is not None:
-        full = re.sub(r'<a:off x="\d+"', f'<a:off x="{E(x)}"', full)
-    if y is not None:
-        full = re.sub(r'y="\d+"', f'y="{E(y)}"', full, count=1)
-    return xml[:m.start()] + full + xml[m.end():]
-
-
-def set_run_size(xml, needle, sz):
-    """Set sz (in points*100 units below: pass e.g. 2000) of the run
-    containing needle text. Operates per <a:r> element."""
-    out = []
-    pos = 0
-    changed = False
-    for m in re.finditer(r"<a:r>.*?</a:r>", xml, re.S):
-        frag = m.group(0)
-        if f"<a:t>{escape(needle)}</a:t>" in frag or f"<a:t>{needle}</a:t>" in frag:
-            frag = re.sub(r'sz="\d+"', f'sz="{sz}"', frag, count=1)
-            changed = True
-        out.append(xml[pos:m.start()])
-        out.append(frag)
-        pos = m.end()
-    out.append(xml[pos:])
-    assert changed, f"run not found for resize: {needle!r}"
-    return "".join(out)
-
-
 def png_size(path):
     d = Path(path).read_bytes()
     assert d[:8] == b"\x89PNG\r\n\x1a\n", f"not a PNG: {path}"
     w, h = struct.unpack(">II", d[16:24])
     return w, h
+
+
+def cw(text, sz=8):
+    """Approximate chip width for a single-line label."""
+    return 0.066 * (sz / 8.0) * len(text) + 0.44
 
 
 class Slide:
@@ -202,7 +174,7 @@ class Slide:
         self.rels = self.rels_p.read_text(encoding="utf-8")
         self.sid = next_id(self.xml)
         self.root = root
-        self.media_counter = media_counter  # shared list [n]
+        self.media_counter = media_counter
 
     def add(self, frag):
         assert "</p:spTree>" in self.xml
@@ -217,8 +189,45 @@ class Slide:
         assert pat.search(self.xml), f"run not found: {old!r}"
         self.xml = pat.sub(r"\1" + escape(new) + r"\2", self.xml, count=1)
 
-    def pic(self, name, src, x, y, w, h=None):
-        """Embed a PNG as an editable, movable p:pic (keeps aspect if h=None)."""
+    def team(self):
+        """Team-name oval: widen it and shrink the run so 'Zencoderss'
+        stays on one line (the template's 14-char placeholder wrapped)."""
+        m = re.search(r"<p:sp>(?:(?!</p:sp>).)*?<a:t>Your Team Name</a:t>"
+                      r".*?</p:sp>", self.xml, re.S)
+        assert m, "team oval not found"
+        blk = m.group(0)
+        blk = re.sub(r'<a:ext cx="\d+" cy="\d+"/>',
+                     f'<a:ext cx="{E(1.95)}" cy="{E(0.88)}"/>', blk, count=1)
+        blk = blk.replace(
+            '<a:rPr lang="en-US" dirty="0"/>',
+            '<a:rPr lang="en-US" sz="1100" dirty="0">'
+            '<a:solidFill><a:srgbClr val="003366"/></a:solidFill></a:rPr>', 1)
+        blk = blk.replace("<a:t>Your Team Name</a:t>",
+                          f"<a:t>{escape(TEAM_NAME)}</a:t>", 1)
+        self.xml = self.xml[:m.start()] + blk + self.xml[m.end():]
+
+    def heading(self, title, fill, title_names):
+        """Blank the inherited serif heading, draw a Canva-style pill."""
+        for n in title_names:
+            self.xml = empty_shape(self.xml, n)
+        w = 0.25 * len(title) + 1.0
+        x = (SW - w) / 2
+        self.box("heading_pill", "roundRect", x, 0.18, w, 0.74,
+                 [para([run(title, 24, True, WHITE, PILLFONT)], algn="ctr")],
+                 fill=fill, anchor="ctr", adj=STADIUM)
+
+    def chip(self, x, y, w, h, text, fill=NAVY, sz=8, color=WHITE,
+             border=None, lw=12700, algn="ctr"):
+        self.box("chip", "roundRect", x, y, w, h,
+                 [para([run(text, sz, True, color)], algn=algn)],
+                 fill=fill, line=border, anchor="ctr", adj=STADIUM, lw=lw)
+
+    def panel(self, x, y, w, h, paras, fill=PANEL, border=BLACK, lw=19050,
+              anchor="t"):
+        self.box("panel", "roundRect", x, y, w, h, paras, fill=fill,
+                 line=border, anchor=anchor, lw=lw)
+
+    def pic(self, name, src, x, y, w, h=None, border=BLACK):
         iw, ih = png_size(src)
         if h is None:
             h = w * ih / iw
@@ -233,6 +242,8 @@ class Slide:
             f'/officeDocument/2006/relationships/image" Target="../media/{fname}"/>'
             "</Relationships>", 1)
         self.sid += 1
+        ln = (f'<a:ln w="19050"><a:solidFill><a:srgbClr val="{border}"/>'
+              "</a:solidFill></a:ln>" if border else "<a:ln><a:noFill/></a:ln>")
         frag = (
             f'<p:pic><p:nvPicPr><p:cNvPr id="{self.sid}" name="{escape(name)}"/>'
             '<p:cNvPicPr/></p:nvPicPr>'
@@ -241,7 +252,7 @@ class Slide:
             f'<p:spPr><a:xfrm><a:off x="{E(x)}" y="{E(y)}"/>'
             f'<a:ext cx="{E(w)}" cy="{E(h)}"/></a:xfrm>'
             '<a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>'
-            '<a:noFill/><a:ln><a:noFill/></a:ln></p:spPr></p:pic>'
+            f"<a:noFill/>{ln}</p:spPr></p:pic>"
         )
         self.add(frag)
         return h
@@ -251,86 +262,77 @@ class Slide:
         self.rels_p.write_text(self.rels, encoding="utf-8")
 
 
+def caption(s, x, y, w, text, sz=7.5, fill=YELLOW):
+    """Yellow highlight caption chip (reference deck's screenshot labels)."""
+    s.chip(x, y, w, 0.32, text, fill=fill, sz=sz, color=BLACK)
+
+
 # ---------------------------------------------------------------- title page
 def slide1(root, media):
     s = Slide(root, 1, media)
-    pairs = [
-        ("Problem Statement ID \u2013", "Problem Statement ID \u2013 SIH26076"),
-        ("Problem Statement Title-",
-         "Personalised homepage for the Mausam mobile application"),
-        ("Theme-", "Theme \u2013 Smart Automation"),
-        ("PS Category- Software/Hardware", "PS Category \u2013 Software"),
-        ("Team ID-", f"Team ID \u2013 {TEAM_ID}"),
-        ("Team Name (Registered on portal)",
-         f"Team Name \u2013 {TEAM_NAME}"),
-    ]
-    for old, new in pairs:
-        s.text(old, new)
-    # The template justifies these bullets (rivers + wrap collisions):
-    # left-align, tighten to 85% spacing, shrink runs so the block ends
-    # above our title.
-    s.xml = s.xml.replace('algn="just"', 'algn="l"')
-    s.xml = s.xml.replace(
-        '<a:pPr marL="285750" indent="-285750" algn="l">',
-        '<a:pPr marL="285750" indent="-285750" algn="l">'
-        '<a:lnSpc><a:spcPct val="100000"/></a:lnSpc>'
-        '<a:spcBef><a:spcPts val="0"/></a:spcBef>'
-        '<a:spcAft><a:spcPts val="0"/></a:spcAft>')
-    # The template sets 200% line spacing on these bullets: collapse it.
-    s.xml = s.xml.replace(
-        'indent="-285750" algn="l"><a:lnSpc><a:spcPct val="100000"/>'
-        '</a:lnSpc><a:spcBef><a:spcPts val="0"/></a:spcBef>'
-        '<a:spcAft><a:spcPts val="0"/></a:spcAft>'
-        '<a:lnSpc><a:spcPct val="200000"/></a:lnSpc>',
-        'indent="-285750" algn="l"><a:lnSpc><a:spcPct val="100000"/>'
-        '</a:lnSpc><a:spcBef><a:spcPts val="0"/></a:spcBef>'
-        '<a:spcAft><a:spcPts val="0"/></a:spcAft>')
-    for needle in ("Problem Statement ID \u2013 SIH26076",
-                   "Theme \u2013 Smart Automation",
-                   "PS Category \u2013 Software",
-                   f"Team ID \u2013 {TEAM_ID}",
-                   f"Team Name \u2013 {TEAM_NAME}"):
-        s.xml = set_run_size(s.xml, needle, 1700)
-    # Long title must hold one line: 15pt guarantees it in this box.
-    s.xml = set_run_size(
-        s.xml, "Personalised homepage for the Mausam mobile application",
-        1500)
-    # Stock hexagon + lightbulb make room for the real product screenshot.
-    s.xml = remove_shape(s.xml, "Picture 4")
+    # Template scaffolding out: 'TITLE PAGE' + the inherited serif banner.
+    # Re-emitted below as a navy pill (identical wording).
+    s.xml = empty_shape(s.xml, "Subtitle 3")
+    s.heading("SMART INDIA HACKATHON 2026", NAVY, ["Title 7"])
+    s.xml = empty_shape(s.xml, "TextBox 9")   # fields re-emitted below
+    # Template decorations (bulb freeform + cropped watermark) are ghost art
+    # behind the fields panel; keep the locked white Rectangle 24.
     s.xml = remove_shape(s.xml, "Freeform: Shape 26")
-    # Idea title below the field block, larger than any template bullet.
-    s.box("accent", "rect", 0.67, 4.55, 5.60, 0.09, [EMPTY_PARA],
-          fill=AMBER)
-    s.box("ideatitle", "rect", 0.67, 4.68, 5.60, 0.55,
-          [para([run("Mausam home: actions with proof", 28, True, NAVY,
-                      "Times New Roman")])], fill=None)
-    s.box("tagline", "rect", 0.67, 5.27, 5.60, 0.60,
-          [para([run("Every number shows its source, station, issue time "
-                      "and age. Every advisory can be re-derived by hand.",
-                      12, False, GREY)])], fill=None)
-    # Real product screenshot, right side (editable picture object).
-    s.pic("productshot", EV / "mobile-home.png", 9.30, 0.55, 2.55, 5.55)
-    s.box("shotcap", "rect", 9.05, 6.15, 3.05, 0.55,
-          [para([run("Working prototype home (illustrative screenshot). "
-                      "Map + action cards with IMD provenance on every "
-                      "number.", 9, False, GREY)], algn="ctr")],
-          fill=None)
+    s.xml = remove_shape(s.xml, "Picture 4")
+
+    # Fields panel: red labels + navy values (reference deck's title layout).
+    s.panel(0.66, 2.15, 8.30, 2.50,
+            [para([run("Problem Statement ID \u2013 ", 15, True, RED),
+                   run("SIH26076", 15, True, NAVY)]),
+             para([run("Problem Statement Title \u2013 ", 15, True, RED),
+                   run("Personalised homepage for the Mausam mobile "
+                       "application", 15, True, NAVY)]),
+             para([run("Theme \u2013 ", 15, True, RED),
+                   run("Smart Automation", 15, True, NAVY)]),
+             para([run("PS Category \u2013 ", 15, True, RED),
+                   run("Software", 15, True, NAVY)]),
+             para([run("Team ID \u2013 ", 15, True, RED),
+                   run(TEAM_ID, 15, True, NAVY)]),
+             para([run("Team Name \u2013 ", 15, True, RED),
+                   run(TEAM_NAME, 15, True, NAVY)]),
+             para([run("Organisation \u2013 ", 15, True, RED),
+                   run("Ministry of Earth Sciences (IMD)", 15, True, NAVY)])],
+            fill=PALE, lw=19050)
+
+    s.box("accent", "rect", 0.66, 4.88, 8.30, 0.09, [EMPTY_PARA], fill=AMBER)
+    s.box("ideatitle", "rect", 0.66, 5.02, 8.30, 0.60,
+          [para([run("Mausam home: actions with proof", 30, True, NAVY,
+                     PILLFONT)])], fill=None)
+    s.box("tagline", "rect", 0.66, 5.66, 8.30, 0.62,
+          [para([run("Every number shows its source, station, issue time and "
+                     "age. Every advisory can be re-derived by hand.",
+                     13, False, GREY)])], fill=None)
+
+    s.pic("productshot", EV / "mobile-home.png", 9.40, 1.25, 2.45, 5.30)
+    caption(s, 9.15, 6.60, 2.95,
+            "WORKING PROTOTYPE \u00b7 HOME (ILLUSTRATIVE)", sz=7)
+    # Live demo: QR + URL (bottom-left, the block's only free band).
+    s.pic("demoqr", DEMO_QR, 0.66, 6.34, 0.58, 0.58, border=None)
+    s.box("demolink", "rect", 1.38, 6.34, 7.58, 0.58,
+          [para([run("LIVE DEMO   ", 10, True, NAVY, PILLFONT),
+                 run(DEMO, 9, True, BLUEKEY, u="sng")]),
+           para([run("Guest-first PWA \u00b7 works offline \u00b7 English and "
+                     "Hindi", 8.5, False, GREY)])], fill=None)
     s.save()
 
 
 # ------------------------------------------------------------------ hero (2)
 def slide2(root, media):
     s = Slide(root, 2, media)
-    s.text("Your Team Name", TEAM_NAME)
-    # Pointer box inherits the full canvas: blank it (exact wording is
-    # re-emitted verbatim in the compact labels below).
+    s.team()
     s.xml = empty_shape(s.xml, "TextBox 8")
-    # Idea title under the heading (heading box ends y=1.25; keep clear).
-    s.box("ideatitle", "rect", 0.67, 1.32, 9.60, 0.34,
-          [para([run("Mausam home: actions with proof", 22, True, NAVY,
-                      "Times New Roman")])], fill=None)
-    # Left column: exact pointer labels + concise fill (9pt caps labels).
-    px, pw = 0.67, 3.85
+    s.heading("IDEA TITLE", GREEN, ["Title 1"])
+    s.box("ideatitle", "rect", 0.67, 1.00, 12.00, 0.34,
+          [para([run("Mausam home: actions with proof", 16, True, NAVY,
+                     PILLFONT)], algn="ctr")], fill=None)
+
+    # Left column: exact pointer wording as navy chips + light-blue panels.
+    px, pw = 0.67, 4.25
     rows = [
         ("Proposed Solution (Describe your Idea/Solution/Prototype)",
          "A home screen that adapts to you: map on top, action cards below."),
@@ -344,59 +346,61 @@ def slide2(root, media):
          "Source on every number. Replayable advice. Honest gaps where data "
          "is missing. A grounded bot that never invents numbers."),
     ]
-    y = 1.72
+    y = 1.55
     for head, body in rows:
-        s.box("ptr", "rect", px, y, pw, 0.26,
-              [para([run(head.upper(), 9, True, NAVY)])], fill=None)
-        y += 0.26
-        s.box("fill", "rect", px, y, pw, 0.52,
-              [para([run(body, 11, False)])], fill=None)
-        y += 0.62
-    # Center: two REAL screenshots with a tap-to-prove caption strip.
-    s.pic("shot-home", EV / "mobile-home.png", 4.75, 1.72, 1.85, 3.85)
-    s.pic("shot-prov", EV / "ticket-04-provenance.png", 6.80, 1.72, 1.85, 3.85)
-    s.box("shotcap", "rect", 4.70, 5.60, 4.00, 0.34,
-          [para([run("number on screen \u2192 tap \u24d8 \u2192 source \u00b7 "
-                      "station \u00b7 issue time \u00b7 age", 10, True, NAVY)],
-                algn="ctr")],
-          fill=None)
-    # Right: 1 hero differentiator + 2 support (chatbot moved to slide 3).
-    s.box("hero", "roundRect", 9.00, 1.72, 3.65, 1.25,
-          [para([run("Source on every number", 13, True, NAVY)]),
-           para([run("station + issue time + age on each reading; tap \u24d8 "
-                      "for the full provenance sheet", 10, False, GREY)])],
-          fill=LIGHT, line=AMBER, anchor="t")
-    sup = [
-        ("Advice you can replay", "same data \u2192 same card, byte-identical"),
-        ("Honest gaps, no guesses", "no data \u2192 a gap card, never a zero"),
-    ]
-    dy = 3.10
+        s.chip(px, y, min(cw(head, 7.5), pw), 0.28, head, sz=7.5)
+        s.panel(px, y + 0.30, pw, 0.68,
+                [para([run(body, 9.5, False, INK)])], fill=PANEL)
+        y += 1.12
+
+    # Center: two real screenshots, black frames + yellow caption chips.
+    s.pic("shot-home", EV / "mobile-home.png", 5.15, 1.55, 1.70, 3.68)
+    s.pic("shot-prov", EV / "ticket-04-provenance.png", 7.05, 1.55, 1.70, 3.68)
+    caption(s, 5.15, 5.30, 1.70, "HOME \u00b7 MAP + ACTIONS", sz=7)
+    caption(s, 7.05, 5.30, 1.70, "TAP \u24d8 \u2192 PROVENANCE", sz=7)
+
+    # Right: hero differentiator + support cards + persona chips.
+    rx, rw = 9.00, 3.65
+    s.panel(rx, 1.55, rw, 1.30,
+            [para([run("Source on every number", 13, True, WHITE)]),
+             para([run("station + issue time + age on each reading; tap "
+                       "\u24d8 for the full provenance sheet", 9.5, False,
+                       WHITE)])],
+            fill=NAVY, border=NAVY)
+    sup = [("Advice you can replay", "same data \u2192 same card, byte-identical"),
+           ("Honest gaps, no guesses", "no data \u2192 a gap card, never a zero")]
+    dy = 3.02
     for t, d in sup:
-        s.box("diff", "roundRect", 9.00, dy, 3.65, 0.95,
-              [para([run(t, 11, True)]),
-               para([run(d, 10, False, GREY)])],
-              fill=LIGHT, line=BLUE, anchor="t")
-        dy += 1.05
-    # Hook banner, full width (the memorable sentence).
-    s.box("hook", "roundRect", 0.67, 6.00, 11.98, 0.78,
-          [para([run("Every number on this screen can tell you where it came "
-                      "from, when it was issued, and how old it is. Every "
-                      "advisory can be re-derived by hand.",
-                      11, True, NAVY)], algn="ctr")],
-          fill=LIGHT, line=NAVY, anchor="ctr")
+        s.panel(rx, dy, rw, 1.00,
+                [para([run(t, 11, True, INK)]),
+                 para([run(d, 9.5, False, GREY)])], fill=PANEL)
+        dy += 1.14
+    s.chip(rx, 5.44, rw, 0.34,
+           "PERSONAS  \u00b7  Commuter \u00b7 Farmer \u00b7 Health",
+           fill=PINKCHIP, sz=8)
+
+    # Hook banner: the memorable sentence, white on navy.
+    s.panel(0.67, 6.18, 11.98, 0.70,
+            [para([run("Every number on this screen can tell you where it "
+                       "came from, when it was issued, and how old it is. "
+                       "Every advisory can be re-derived by hand.",
+                       11, True, WHITE)], algn="ctr")],
+            fill=NAVY, border=NAVY, anchor="ctr")
     s.save()
 
 
 # ------------------------------------------------------------ technical (3)
 def slide3(root, media):
     s = Slide(root, 3, media)
-    s.text("Your Team Name", TEAM_NAME)
+    s.team()
     s.xml = empty_shape(s.xml, "TextBox 8")
-    # Compact labels, exact pointer text.
-    s.box("ptr1", "rect", 0.67, 1.22, 12.00, 0.28,
-          [para([run("Technologies to be used (e.g. programming languages, "
-                     "frameworks, hardware)", 10, True, NAVY)])], fill=None)
-    # Pipeline: 6 boxes + 5 arrows. GATEWAY is the critical path: amber ring.
+    s.heading("TECHNICAL APPROACH", NAVY, ["Title 1"])
+    s.chip(0.67, 1.02, 7.60, 0.34,
+           "Technologies to be used (e.g. programming languages, "
+           "frameworks, hardware)", sz=8)
+
+    # Pipeline: 6 boxes + 5 arrows. GATEWAY = critical path (amber ring).
+    # Left column only (ends 8.34) so the prototype column at 8.60 stays clear.
     steps = [
         ("IMD DATA", "28 keyed APIs\nWFS \u00b7 CAP feed", BLUE),
         ("\u2605 GATEWAY", "Static-IP host\nkey + hourly JWT", BLUE),
@@ -405,30 +409,34 @@ def slide3(root, media):
         ("BACKEND", "Bundle API\npush \u00b7 ledger", BLUE),
         ("HOMEPAGE", "Offline PWA\nEN/HI \u00b7 WCAG AA", NAVY),
     ]
-    x, y0, bw, bh, gap = 0.45, 1.55, 1.78, 1.40, 0.30
+    x, y0, bw, bh, gap = 0.42, 1.52, 1.17, 1.40, 0.18
     for i, (t, d, fill) in enumerate(steps):
         s.box("pipe", "roundRect", x, y0, bw, bh,
-              [para([run(t, 12, True, WHITE)], algn="ctr"),
-               para([run(d, 10, False, WHITE)], algn="ctr")],
-              fill=fill, line=(AMBER if i == 1 else None), anchor="ctr")
+              [para([run(t, 8 if len(t) > 10 else 10, True, WHITE)],
+                    algn="ctr"),
+               para([run(d, 8.5, False, WHITE)], algn="ctr")],
+              fill=fill, line=(AMBER if i == 1 else BLACK),
+              anchor="ctr", lw=(28575 if i == 1 else 12700))
         if i < 5:
             s.sid += 1
             s.add(arrow(s.sid, x + bw + 0.02, y0 + bh / 2 - 0.14, gap - 0.04,
                         0.28))
         x += bw + gap
-    # Tech stack as chips under the stage they belong to (single axis).
+
+    # Tech chips directly under the stage they belong to.
     chips = ["Vanilla JS PWA", "Leaflet maps", "FastAPI",
              "Firebase auth + Web Push", "Grounded bot + templates"]
-    cx = 0.45
+    cx = 0.42
     for c in chips:
-        s.box("chip", "roundRect", cx, 3.05, 2.32, 0.40,
-              [para([run(c, 10, False)], algn="ctr")],
-              fill=PALE, line="BBBBBB", anchor="ctr")
-        cx += 2.44
-    # Methodology pointer (verbatim), then a 3-stage timeline diagram.
-    s.box("ptr2", "rect", 0.67, 3.55, 7.60, 0.30,
-          [para([run("Methodology and process for implementation (Flow Charts/"
-                     "Images/ working prototype)", 10, True, NAVY)])], fill=None)
+        s.chip(cx, 3.00, 1.50, 0.38, c, fill=PANEL, sz=7.5, color=INK,
+               border=BLACK, lw=19050)
+        cx += 1.605
+
+    s.chip(0.67, 3.48, 7.60, 0.34,
+           "Methodology and process for implementation (Flow Charts/"
+           "Images/ working prototype)", sz=8)
+
+    # 3-stage methodology timeline (the template asks for a flow chart).
     stages = [
         ("Mock today", "real captures\n32 tests green"),
         ("Live pipeline", "keyed APIs\nstatic IP + JWT"),
@@ -436,49 +444,65 @@ def slide3(root, media):
     ]
     mx = 0.67
     for i, (t, d) in enumerate(stages):
-        s.box("stage", "roundRect", mx, 3.90, 2.30, 1.00,
+        s.box("stage", "roundRect", mx, 3.90, 2.30, 0.95,
               [para([run(t, 11, True, WHITE)], algn="ctr"),
                para([run(d, 9, False, WHITE)], algn="ctr")],
-              fill=NAVY if i == 0 else BLUE, anchor="ctr")
+              fill=NAVY if i == 0 else BLUE, line=BLACK, anchor="ctr",
+              lw=12700)
         if i < 2:
             s.sid += 1
-            s.add(arrow(s.sid, mx + 2.32, 4.26, 0.34, 0.28, fill=GREEN))
+            s.add(arrow(s.sid, mx + 2.32, 4.24, 0.34, 0.28, fill=GREENBR))
         mx += 2.68
-    # Replay loop + what-AI-does two-up.
-    s.box("replay", "roundRect", 0.67, 5.05, 4.00, 0.95,
-          [para([run("REPLAY  logged inputs \u2192 rule chain \u2192 "
-                      "byte-identical card \u21ba", 10, True, NAVY)],
-                algn="ctr")],
-          fill=LIGHT, line=NAVY, anchor="ctr")
-    s.box("ainote", "roundRect", 4.80, 5.05, 3.47, 0.95,
-          [para([run("AI only where justified: grounded bot + template "
-                      "fallback. No model invents weather.", 10, False, INK)],
-                algn="ctr")],
-          fill=LIGHT, line=GREEN, anchor="ctr")
-    # Working prototype screenshot, right (template permits it here).
-    s.box("protohead", "rect", 8.60, 3.55, 4.05, 0.30,
-          [para([run("Working prototype (illustrative screenshot)", 10, True,
-                      NAVY)], algn="ctr")], fill=None)
-    s.pic("shot-proto", EV / "ticket-02-engine-hero.png", 9.55, 3.90, 1.35,
-          2.60)
-    s.box("protocap", "rect", 8.60, 6.52, 4.05, 0.28,
-          [para([run("replay reproduces this card byte-identically",
-                      9, False, GREY)], algn="ctr")], fill=None)
+
+    # Replay loop + AI two-up (paired answers to "why is AI here").
+    s.panel(0.67, 5.05, 3.90, 1.55,
+            [para([run("REPLAY", 11, True, NAVY)], algn="ctr"),
+             para([run("logged inputs \u2192 rule chain \u2192 "
+                       "byte-identical card \u21ba", 10, False, INK)],
+                  algn="ctr")],
+            fill=YELLOW, border=BLACK, anchor="ctr", lw=19050)
+    s.panel(4.77, 5.05, 3.55, 1.55,
+            [para([run("AI only where justified", 11, True, NAVY)], algn="ctr"),
+             para([run("grounded bot + template fallback. No model invents "
+                       "weather.", 10, False, INK)], algn="ctr")],
+            fill=PANEL, border=BLACK, anchor="ctr", lw=19050)
+
+    # Working prototype + assistant preview, side by side (right column).
+    s.chip(8.60, 1.02, 4.05, 0.34,
+           "WORKING PROTOTYPE \u00b7 ASSISTANT DESIGN PREVIEW", fill=GREEN,
+           sz=8)
+    s.pic("shot-proto", EV / "ticket-02-engine-hero.png", 9.00, 1.52, 1.60,
+          3.46)
+    s.pic("shot-ai", EV / "mausam-ai-assistant.png", 10.75, 1.52, 1.47, 3.45)
+    caption(s, 9.00, 5.06, 1.60, "BYTE-IDENTICAL REPLAY", sz=6.5)
+    caption(s, 10.75, 5.06, 1.47, "MAUSAM[AI] \u00b7 DESIGN", sz=6.5)
+    s.panel(8.60, 5.52, 4.05, 1.08,
+            [para([run("Mock runs offline on captured IMD payloads; the "
+                       "keyed gateway is the Day-1 critical path.",
+                       9.5, False, INK)], algn="ctr")],
+            fill=PANEL, border=BLACK, anchor="ctr", lw=19050)
     s.save()
 
 
 # ----------------------------------------------------------- feasibility (4)
 def slide4(root, media):
     s = Slide(root, 4, media)
-    s.text("Your Team Name", TEAM_NAME)
+    s.team()
     s.xml = empty_shape(s.xml, "TextBox 8")
-    s.box("feas", "rect", 0.67, 1.22, 12.00, 0.58,
-          [para([run("Analysis of the feasibility of the idea", 10, True,
-                      NAVY)]),
-           para([run("The mock runs offline on real captured IMD payloads. "
-                      "32 tests green. Each risk below has a working "
-                      "fallback.", 12, False)])],
-          fill=None)
+    s.heading("FEASIBILITY AND VIABILITY", GREEN, ["Title 1"])
+    s.chip(0.67, 1.02, 4.70, 0.34, "Analysis of the feasibility of the idea",
+           sz=8)
+    s.box("feas", "rect", 0.67, 1.44, 11.98, 0.32,
+          [para([run("The mock runs offline on real captured IMD payloads. ",
+                     11, False, INK),
+                 run("32 tests green.", 11, True, GREEN),
+                 run(" Each risk below has a working fallback.", 11, False,
+                     INK)])], fill=None)
+
+    s.chip(0.67, 1.86, 4.90, 0.34, "Potential challenges and risks", sz=8)
+    s.chip(6.85, 1.86, 5.30, 0.34,
+           "Strategies for overcoming these challenges", sz=8)
+
     rows = [
         ("Keyed API needs a static-IP host",
          "Run on saved captures + public WFS meanwhile"),
@@ -489,56 +513,64 @@ def slide4(root, media):
         ("iOS limits push alerts",
          "Demo on Android; the inbox keeps every alert"),
     ]
-    y = 1.84
-    s.box("h1", "rect", 0.67, y, 5.85, 0.32,
-          [para([run("Potential challenges and risks", 10, True, NAVY)],
-                algn="l")], fill=None)
-    s.box("h2", "rect", 6.85, y, 5.80, 0.32,
-          [para([run("Strategies for overcoming these challenges", 10, True,
-                      NAVY)], algn="l")], fill=None)
-    y += 0.34
+    y = 2.32
     for ch, fix in rows:
-        s.box("ch", "roundRect", 0.67, y, 5.55, 0.66,
-              [para([run(ch, 11, False)])], fill=PALE, line=RED, anchor="ctr")
+        s.panel(0.95, y, 5.35, 0.66,
+                [para([run(ch, 10.5, False, INK)])], fill=PINK, border=RED,
+                anchor="ctr", lw=19050)
+        s.box("badge", "ellipse", 0.57, y + 0.14, 0.38, 0.38,
+              [para([run("!", 13, True, WHITE)], algn="ctr")], fill=RED,
+              anchor="ctr")
         s.sid += 1
-        s.add(arrow(s.sid, 6.28, y + 0.19, 0.50, 0.28, fill=GREEN))
-        s.box("fix", "roundRect", 6.85, y, 5.80, 0.66,
-              [para([run(fix, 11, False)])], fill=LIGHT, line=GREEN,
-               anchor="ctr")
+        s.add(arrow(s.sid, 6.36, y + 0.19, 0.44, 0.28, fill=GREENBR))
+        s.panel(6.85, y, 5.75, 0.66,
+                [para([run(fix, 10.5, False, INK)])], fill=PANEL,
+                border=GREENBR, anchor="ctr", lw=19050)
+        s.box("badge", "ellipse", 6.47, y + 0.14, 0.38, 0.38,
+              [para([run("\u2713", 13, True, WHITE)], algn="ctr")],
+              fill=GREENBR, anchor="ctr")
         y += 0.78
-    # Feasibility timeline across the freed band.
-    tl = [("Day 1", "static-IP host\n+ key registration"), ("Week 1", "captured-payload\nmock (done)"),
-          ("Week 3", "live keyed\npipeline"), ("Finale", "demo: 3 personas\npush + adapters")]
+
+    # Feasibility timeline (the critical path, named).
+    tl = [("Day 1", "static-IP host + key registration"),
+          ("Week 1", "captured-payload mock (done)"),
+          ("Week 3", "live keyed pipeline"),
+          ("Finale", "demo: 3 personas, push, adapters")]
     tx = 0.67
     for i, (t, d) in enumerate(tl):
-        s.box("tl", "roundRect", tx, 5.42, 2.78, 0.62,
-              [para([run(t + "  \u00b7  " + d.replace("\n", " "), 10, True,
-                          WHITE)], algn="ctr")],
-              fill=AMBER if i == 0 else BLUE, anchor="ctr")
+        fill = ORANGE2 if i == 0 else NAVY
+        s.box("tl", "roundRect", tx, 5.58, 2.78, 0.62,
+              [para([run(t + "  \u00b7  " + d, 9.5, True, WHITE)],
+                    algn="ctr")],
+              fill=fill, line=BLACK, anchor="ctr", lw=12700)
         if i < 3:
             s.sid += 1
-            s.add(arrow(s.sid, tx + 2.80, 5.63, 0.30, 0.20, fill=GREY))
+            s.add(arrow(s.sid, tx + 2.80, 5.79, 0.30, 0.20, fill=GREY))
         tx += 3.12
-    # Viability strip (the header promises it).
-    s.box("viab", "roundRect", 0.67, 6.12, 11.98, 0.66,
-          [para([run("Viability: one container on a static-IP VM \u00b7 one "
-                      "IMD API account (2 DEV + 2 PROD keys, attribution "
-                      "ledger on request) \u00b7 no paid services \u00b7 IMD "
-                      "data with attribution; CPCB/CAMS labelled adapters.",
-                      10, False, INK)], algn="ctr")],
-          fill=LIGHT, line=NAVY, anchor="ctr")
+
+    # Viability: the yellow key-highlight box from the reference deck.
+    s.panel(0.67, 6.30, 11.98, 0.62,
+            [para([run("Viability: ", 10, True, RED),
+                   run("one container on a static-IP VM \u00b7 one IMD API "
+                       "account (2 DEV + 2 PROD keys, attribution ledger on "
+                       "request) \u00b7 no paid services \u00b7 IMD data with "
+                       "attribution; CPCB/CAMS labelled adapters.",
+                       10, False, INK)], algn="ctr")],
+            fill=YELLOW, border=BLACK, anchor="ctr", lw=19050)
     s.save()
 
 
 # ---------------------------------------------------------------- impact (5)
 def slide5(root, media):
     s = Slide(root, 5, media)
-    s.text("Your Team Name", TEAM_NAME)
+    s.team()
     s.xml = empty_shape(s.xml, "TextBox 8")
-    s.box("imp", "rect", 0.67, 1.22, 9.00, 0.35,
-          [para([run("Potential impact on the target audience", 10, True,
-                      NAVY)])], fill=None)
-    # Persona -> action -> measurable outcome (deep personas, no filler).
+    s.heading("IMPACT AND BENEFITS", NAVY, ["Title 1"])
+
+    # IMPACT: pointer chip + panel with the persona matrix.
+    s.chip(0.67, 1.02, 5.10, 0.34,
+           "Potential impact on the target audience", sz=8)
+    s.panel(0.67, 1.46, 7.75, 2.60, [EMPTY_PARA], fill=PANEL)
     rows = [
         ("Commuter", "Fog window + \u201cleave 20 min early\u201d",
          "time to state the action"),
@@ -549,47 +581,61 @@ def slide5(root, media):
     ]
     y = 1.62
     for p, act, meas in rows:
-        s.box("per", "roundRect", 0.67, y, 2.00, 0.95,
-              [para([run(p, 12, True, WHITE)], algn="ctr")], fill=NAVY,
-              anchor="ctr")
+        s.chip(0.85, y, 1.55, 0.70, p, sz=11)
         s.sid += 1
-        s.add(arrow(s.sid, 2.73, y + 0.33, 0.40, 0.28, fill=AMBER))
-        s.box("act", "roundRect", 3.19, y, 3.10, 0.95,
-              [para([run(act, 11, False)], algn="ctr")], fill=WHITE,
-              line=BLUE, anchor="ctr")
+        s.add(arrow(s.sid, 2.50, y + 0.21, 0.38, 0.28, fill=ORANGE))
+        s.panel(2.98, y, 2.55, 0.70,
+                [para([run(act, 9.5, False, INK)], algn="ctr")],
+                fill=WHITE, border=BLACK, anchor="ctr", lw=19050)
         s.sid += 1
-        s.add(arrow(s.sid, 6.35, y + 0.33, 0.40, 0.28, fill=AMBER))
-        s.box("meas", "roundRect", 6.81, y, 2.80, 0.95,
-              [para([run("we measure:", 9, True, GREY)], algn="ctr"),
-               para([run(meas, 10, False, INK)], algn="ctr")],
-              fill=LIGHT, line=GREEN, anchor="ctr")
-        y += 1.08
-    # Offline + Hindi proof screenshot.
+        s.add(arrow(s.sid, 5.62, y + 0.21, 0.38, 0.28, fill=ORANGE))
+        s.panel(6.10, y, 2.15, 0.70,
+                [para([run("we measure:", 7.5, True, GREY)], algn="ctr"),
+                 para([run(meas, 9, False, INK)], algn="ctr")],
+                fill=WHITE, border=GREENBR, anchor="ctr", lw=19050)
+        y += 0.82
+
+    # BENEFITS: pointer chip + pink panel, red lead-ins (reference style).
+    s.chip(0.67, 4.24, 7.75, 0.34,
+           "Benefits of the solution (social, economic, environmental, etc.)",
+           sz=8)
+    benefits = [
+        ("Earlier action: ", "each card states what to do and how fast."),
+        ("Traceable trust: ", "every reading names source, station and age."),
+        ("Works offline: ", "the home shell keeps the last forecast."),
+        ("Hindi + English: ", "warning text is human-reviewed, never raw "
+                              "machine translation."),
+        ("Honest gaps: ", "missing data shows as a gap, never a fake zero."),
+    ]
+    s.panel(0.67, 4.68, 7.75, 2.24,
+            [para([run("\u25cf  ", 11, True, PINKCHIP),
+                   run(lead, 11, True, RED), run(rest, 11, False, INK)],
+                  spc_aft=12)
+             for lead, rest in benefits],
+            fill=PINK, border=BLACK, lw=19050)
+
+    # Right: Hindi/offline proof + the no-invented-numbers stance.
     s.pic("shot-hi", EV / "ticket-21-onboarding-language-hi.png",
-          9.95, 1.62, 1.70, 3.30)
-    s.box("hicap", "rect", 9.75, 4.95, 2.10, 0.50,
-          [para([run("Hindi onboarding +\noffline shell (illustrative)",
-                      9, False, GREY)], algn="ctr")], fill=None)
-    # Benefits pointer (verbatim) + honest measurement line.
-    s.box("ben", "rect", 0.67, 5.55, 11.98, 1.15,
-          [para([run("Benefits of the solution (social, economic, "
-                      "environmental, etc.)", 10, True, NAVY)]),
-           para([run("Warning text is human-reviewed, never raw machine "
-                      "translation. No invented statistics: impact is measured "
-                      "in the pilot \u2014 can users state the action, how "
-                      "fast, does every card replay.", 11, False)])],
-          fill=None)
+          9.75, 1.46, 1.80, 3.90)
+    caption(s, 8.65, 5.46, 4.00, "HINDI ONBOARDING \u00b7 OFFLINE SHELL",
+            sz=7.5)
+    s.panel(8.65, 5.88, 4.00, 1.04,
+            [para([run("No invented statistics. Impact is measured in the "
+                       "pilot.", 11, True, WHITE)], algn="ctr")],
+            fill=NAVY, border=NAVY, anchor="ctr")
     s.save()
 
 
 # -------------------------------------------------------------- references (6)
 def slide6(root, media):
     s = Slide(root, 6, media)
-    s.text("Your Team Name", TEAM_NAME)
-    # Pull the title up so the top half is usable (wording untouched).
-    s.xml = move_shape(s.xml, "Title 1", y=0.30)
-    s.xml = move_shape(s.xml, "TextBox 8", x=12.95, y=6.60)
-    # Source-map tiles across the top.
+    s.team()
+    s.xml = empty_shape(s.xml, "TextBox 8")
+    s.heading("RESEARCH  AND REFERENCES", GREEN, ["Title 1"])
+    s.chip(0.67, 1.02, 6.40, 0.34,
+           "Details / Links of the reference and research work", sz=8)
+
+    # Source-map tiles: instantly answers "research-backed or invented".
     tiles = [
         ("IMD", "official \u00b7 keyed API"),
         ("CPCB", "official \u00b7 labelled adapter"),
@@ -599,11 +645,13 @@ def slide6(root, media):
     ]
     tx = 0.67
     for t, d in tiles:
-        s.box("tile", "roundRect", tx, 1.05, 2.32, 0.72,
+        s.box("tile", "roundRect", tx, 1.46, 2.32, 0.72,
               [para([run(t, 11, True, WHITE)], algn="ctr"),
                para([run(d, 9, False, WHITE)], algn="ctr")],
-              fill=NAVY if t in ("IMD", "Our mock") else BLUE, anchor="ctr")
+              fill=NAVY if t in ("IMD", "Our mock") else BLUE, line=BLACK,
+              anchor="ctr", lw=12700)
         tx += 2.44
+
     refs = [
         ("IMD API reference + portal user guide (key, hourly JWT, static IP)",
          "api.imd.gov.in"),
@@ -617,22 +665,30 @@ def slide6(root, media):
         ("Mausam app: existing Damini lightning + Meghdoot crop modules",
          "mausam.imd.gov.in"),
         ("Working mock, fixtures, replay tests (32 pass)",
-         "submission folder Mausam/docs/evidence (illustrative)"),
+         "Mausam/docs/evidence (illustrative)"),
+        ("Live demo \u2013 deployed PWA, guest-first, works offline",
+         DEMO.removeprefix("https://")),
     ]
-    y = 1.90
-    for i, (t, link) in enumerate(refs, 1):
-        s.box("ref", "roundRect", 0.67, y, 11.98, 0.62,
-              [para([run(f"{i}.  {t}", 10, False),
-                     run(f"  {link}", 10, False, BLUE)])],
-              fill=PALE if i % 2 else WHITE,
-              line="CCCCCC", anchor="t")
-        y += 0.68
+    s.panel(0.67, 2.32, 11.98, 3.05,
+            [para([run(f"{i}.  {t}  ", 11, True, WHITE),
+                   run(link, 11, True, "FFE08A", u="sng")], spc_aft=14)
+             for i, (t, link) in enumerate(refs, 1)],
+            fill=ORANGE2, border=BLACK, anchor="ctr", lw=28575)
+
+    s.chip(0.67, 5.94, 2.40, 0.44, "REFERENCES", fill=GREEN, sz=12)
+    s.box("note", "rect", 3.35, 5.98, 9.30, 0.40,
+          [para([run("Official, verifiable sources; local mock paths are "
+                     "labelled (illustrative). No fabricated statistics.",
+                     10.5, False, INK)])], fill=None)
     s.save()
 
 
 def drop_instruction_slide(root):
     (root / "ppt/slides/slide7.xml").unlink(missing_ok=True)
     (root / "ppt/slides/_rels/slide7.xml.rels").unlink(missing_ok=True)
+    # slide7's speaker notes die with it, or their rels dangle.
+    (root / "ppt/notesSlides/notesSlide6.xml").unlink(missing_ok=True)
+    (root / "ppt/notesSlides/_rels/notesSlide6.xml.rels").unlink(missing_ok=True)
     pr = root / "ppt/_rels/presentation.xml.rels"
     txt = pr.read_text(encoding="utf-8")
     m = re.search(r'<Relationship Id="(rId\d+)"[^>]*Target="slides/slide7.xml"',
@@ -648,6 +704,8 @@ def drop_instruction_slide(root):
     cxt = ct.read_text(encoding="utf-8")
     cxt = re.sub(r'<Override PartName="/ppt/slides/slide7.xml"[^>]*/>', "",
                  cxt)
+    cxt = re.sub(r'<Override PartName="/ppt/notesSlides/notesSlide6.xml"'
+                 r'[^>]*/>', "", cxt)
     ct.write_text(cxt, encoding="utf-8")
 
 
@@ -655,16 +713,17 @@ def main():
     assert TPL.exists(), f"template missing: {TPL}"
     for ev in ["mobile-home.png", "ticket-04-provenance.png",
                "ticket-02-engine-hero.png",
-               "ticket-21-onboarding-language-hi.png"]:
+               "ticket-21-onboarding-language-hi.png",
+               "mausam-ai-assistant.png"]:
         assert (EV / ev).exists(), f"evidence missing: {ev}"
+    assert DEMO_QR.exists(), f"demo QR missing: {DEMO_QR}"
     work = HERE / "build_tmp"
     if work.exists():
         shutil.rmtree(work)
     work.mkdir()
     with zipfile.ZipFile(TPL) as z:
         z.extractall(work)
-    # template ships image1+image2 -> next embedded image is image3.
-    media = [2]
+    media = [2]  # template ships image1 + image2
     slide1(work, media)
     slide2(work, media)
     slide3(work, media)
