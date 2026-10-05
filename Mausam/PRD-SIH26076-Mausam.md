@@ -275,7 +275,7 @@ Card comprehension (can a user state the action?) · time-to-decision · cache-l
 - **FR-24** Routine creation via chat: user says "remind me for my run at 7am" → bot confirms the activity, time, days, and place → creates the routine entry in local storage → schedules the departure alert (T−30 default). The bot shows the created routine card immediately.
 - **FR-25** Provenance integration: from any card, "Ask about this" opens the bot pre-seeded with that card's context. The bot can read the provenance sheet fields aloud or in text.
 - **FR-26** Accessibility: voice input/output supported where browser APIs allow; all bot responses meet WCAG AA contrast; keyboard-accessible chat pane; screen-reader labels on all messages.
-- **FR-27** Privacy: chat history stored locally only (IndexedDB), cleared on app data clear. No chat logs sent to any server. If online phrasing LM is used, only the user's question text is sent (no bundle data, no location, no identity).
+- **FR-27** Privacy: chat history stored locally only (IndexedDB), cleared on app data clear. No chat logs sent to any server. If online phrasing LM is used, only the user's question plus the grounded reply text is sent (no bundle data, no location, no identity).
 
 ### 17.3 Architecture Impact
 
@@ -288,6 +288,7 @@ Personal Bundle (~15 KB JSON) → Chatbot Context Engine (on-device)
 ```
 
 - No new backend endpoint required for the mock. Finale may add a `/chat` endpoint that proxies to a retrieval-grounded LM with strict schema: input = user text + bundle context; output = templated response with `card_ref` pointers. The LM never sees raw IMD payloads.
+- Online provider: **Groq** (`qwen/qwen3.8-27b`, temperature 0), **BYOK** — the key is pasted in Settings, stored on-device only, and sent as a Bearer header from the browser. The R12 number gate runs on every Groq reply; failures fall back to templates.
 - The chatbot is a **view** on the existing engine, not a new data path.
 
 ### 17.4 Updated Risk Register Additions

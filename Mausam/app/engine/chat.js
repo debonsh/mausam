@@ -78,6 +78,18 @@ function matchActivity(text, customs) {
   return null;
 }
 
+function extractNumbers(s) {
+  return String(s || "").match(/\d+(\.\d+)?/g) || [];
+}
+
+// The R12 gate, enforced at runtime on every online rephrase: the rephrased
+// reply may only repeat numbers from the grounded original. A new number is
+// blocked and the template reply stands. Non-numeric prose always passes.
+function validateRephrase(original, rephrased) {
+  const allowed = new Set(extractNumbers(original));
+  return extractNumbers(rephrased).every((n) => allowed.has(n));
+}
+
 function cardLine(c) {
   const facts = (c.facts || []).map((f) => `${f.label} ${f.value}${f.unit || ""}`).join(", ");
   const p = c.prov || {};
@@ -157,6 +169,6 @@ function answer(text, ctx) {
   return { replies: [say("I don't have that data. I only read what is on your screen: the cards, the planner, and your routines.")] };
 }
 
-const ChatAPI = { answer, parseTime, parseDays, matchActivity, ACTIVITY_SYNONYMS, SCORE_SCALE };
+const ChatAPI = { answer, parseTime, parseDays, matchActivity, extractNumbers, validateRephrase, ACTIVITY_SYNONYMS, SCORE_SCALE };
 if (typeof module !== "undefined") module.exports = ChatAPI;
 if (typeof window !== "undefined") window.MausamChat = ChatAPI;

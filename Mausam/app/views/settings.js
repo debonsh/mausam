@@ -116,6 +116,22 @@ function settingsHTML(state, api) {
       </div>
 
       <div class="group">
+        <p class="section-label">${esc(T("settings.ai"))}</p>
+        <div class="card">
+          <p class="row__label">${esc(T("settings.aiKey"))}</p>
+          <p class="caption mt-2">${esc(T("settings.aiKeySub"))}</p>
+          <div class="form-row mt-3">
+            <label class="sr-only" for="settings-groq">${esc(T("settings.aiKey"))}</label>
+            <input class="field grow" type="password" id="settings-groq" autocomplete="off"
+              placeholder="${esc(store.get("groq-key", "") ? T("settings.aiSaved") : "gsk_…")}" value="" />
+            <button class="btn btn--sm" type="button" data-groq-save>${esc(T("custom.save"))}</button>
+            ${store.get("groq-key", "") ? `<button class="btn btn--sm btn--ghost" type="button" data-groq-clear>${esc(T("chat.clear"))}</button>` : ""}
+          </div>
+          <p class="caption mt-2">${esc(store.get("groq-key", "") ? T("settings.aiOn") : T("settings.aiOff"))}</p>
+        </div>
+      </div>
+
+      <div class="group">
         <p class="section-label">${esc(T("settings.feedback"))}</p>
         <div class="card">
           <div class="spread">
@@ -161,6 +177,17 @@ function wireSettings(state, api) {
   const prov = $("#settings-prov");
   if (prov) prov.addEventListener("change", () => api.setProvenance(prov.checked));
   $$("[data-theme-mode]").forEach((b) => b.addEventListener("click", () => api.setTheme(b.dataset.themeMode)));
+  const gsave = $("[data-groq-save]");
+  if (gsave) gsave.addEventListener("click", () => {
+    const v = $("#settings-groq").value.trim();
+    if (v) { store.set("groq-key", v); api.render(); }
+  });
+  const gclear = $("[data-groq-clear]");
+  if (gclear) gclear.addEventListener("click", () => {
+    store.set("groq-key", "");
+    try { localStorage.removeItem("mausam:groq-key"); } catch {}
+    api.render();
+  });
   $$("[data-fb]").forEach((b) => b.addEventListener("click", () => api.recordFeedback(b.dataset.fb)));
   const edit = $("[data-edit-personas]");
   if (edit) edit.addEventListener("click", () => api.editPersonas());

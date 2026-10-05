@@ -68,6 +68,13 @@ test("unknown question is the honest fallback", () => {
   assert.strictEqual(r.action, undefined);
 });
 
+test("R12 gate: rephrase keeps numbers, blocks new ones", () => {
+  const orig = "Leave at 07:00, visibility 2 km.";
+  assert.ok(Chat.validateRephrase(orig, "Leave at 07:00 when visibility is 2 km."));
+  assert.ok(!Chat.validateRephrase(orig, "Leave at 07:30, visibility 5 km."));
+  assert.ok(Chat.validateRephrase("No data today.", "There is no data right now."));
+});
+
 test("no invented weather numbers: digits only from ctx or the user", () => {
   const ctxNums = new Set((JSON.stringify(CTX) + " 07:00" + Chat.SCORE_SCALE).match(/\d+(\.\d+)?/g));
   for (const q of ["help", "best time?", "where is this from?", "why no pollen?", "explain this card", "will it rain on Mars?"]) {
