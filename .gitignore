@@ -7,3 +7,6 @@ __pycache__/
 build_tmp/
 # npm deps — regenerable from package-lock.json
 node_modules/
+
+# LibreOffice lock files from editing .pptx decks
+.~lock.*#
